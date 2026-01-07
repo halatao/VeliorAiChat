@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Velior AI Chat - Local Embed Example</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* prevent body scroll stealing */
+        }
+
+        #velior-ai-chat {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+  </head>
+  <body>
+    <!-- Minimal localhost embed: single div and loader script. The loader will try common relative paths and inject the bundle. -->
+    <!--
+      To test popup mode open this page with `?chat=popup`, for example:
+      file://.../embed.html?chat=popup or http://localhost:5173/examples/embed.html?chat=popup
+    -->
+    <div id="velior-ai-chat" data-api-url="https://localhost:7201" data-config-code="CZ_ACCOUNTING"></div>
+    <script>
+      (async function () {
+        // allow quick switching between embed and popup for testing using ?chat=popup
+        try {
+          const params = new URLSearchParams(location.search);
+          const chatMode = params.get('chat');
+          if (chatMode && (chatMode === 'popup' || chatMode === 'embed')) {
+            const host = document.getElementById('velior-ai-chat');
+            if (host) {
+              host.setAttribute('data-chat-type', chatMode);
+              // hide the host container when testing popup so a full-page embed
+              // doesn't appear if the bundle still mounts into the host element
+              if (chatMode === 'popup') {
+                host.style.display = 'none';
+              }
+            }
+          }
+        } catch {}
+        const candidates = [
+          '../dist/velior-ai-chat.iife.js',
+          '/dist/velior-ai-chat.iife.js',
+          'dist/velior-ai-chat.iife.js',
+        ];
+
+        async function probe(url) {
+          try {
+            let res = await fetch(url, { method: 'HEAD' });
+            if (!res.ok) {
+              res = await fetch(url, { method: 'GET' });
+            }
+            if (!res.ok) return false;
+            const ct = (res.headers.get('content-type') || '').toLowerCase();
+            return ct.includes('javascript') || ct.includes('application/javascript') || ct.includes('text/javascript');
+          } catch {
+            return false;
+          }
+        }
+
+        let loaded = false;
+        for (const src of candidates) {
+          // try to probe the URL before injecting to avoid MIME/404 issues
+          try {
+            if (await probe(src)) {
+              const s = document.createElement('script');
+              s.src = src;
+              s.async = true;
+              document.head.appendChild(s);
+              console.log('VeliorAiChat: loaded bundle from', src);
+              loaded = true;
+              break;
+            }
+          } catch (e) {
+            console.warn('VeliorAiChat: probe failed for', src, e);
+          }
+        }
+
+        if (!loaded) {
+          // fallback: try to inject the first candidate directly. Some local servers
+          // block HEAD requests or return different headers; direct injection helps
+          // when probing fails during local testing.
+          const fallback = candidates[0];
+          const s = document.createElement('script');
+          s.src = fallback;
+          s.async = true;
+          s.onload = () => console.log('VeliorAiChat: loaded fallback bundle from', fallback);
+          s.onerror = (ev) => console.error('VeliorAiChat: failed to load bundle from', fallback, ev);
+          document.head.appendChild(s);
+          console.warn('VeliorAiChat: probe did not find bundle; injected fallback', fallback);
+        }
+      })();
+    </script>
+  </body>
+</html>
