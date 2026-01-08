@@ -179,12 +179,20 @@ function autoInitFromDom() {
         if (mountedHosts.has(host as HTMLElement)) return;
 
         const apiUrl =
-            (host as HTMLElement).getAttribute("data-api-url") ||
-            window.location.origin;
+            (host as HTMLElement).getAttribute("data-api-url");
+
+        if (!apiUrl) {
+            console.error("VeliorAiChat: data-api-url is required");
+            return;
+        }
 
         const configCode =
-            (host as HTMLElement).getAttribute("data-config-code") ||
-            "CZ_ACCOUNTING";
+            (host as HTMLElement).getAttribute("data-config-code");
+
+        if (!configCode) {
+            console.error("VeliorAiChat: data-config-code is required");
+            return;
+        }
 
         const chatType =
             ((host as HTMLElement).getAttribute("data-chat-type") as
